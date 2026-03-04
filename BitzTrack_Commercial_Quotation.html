@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commercial Quotation - BitzTrack</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
+
+        :root {
+            --primary: #0f172a;
+            --secondary: #334155;
+            --accent: #2563eb;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
+            --success: #10b981;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--primary);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .document {
+            background: white;
+            width: 215.9mm;
+            /* Letter width */
+            min-height: 279.4mm;
+            /* Letter height */
+            padding: 12mm 20mm;
+            /* Adjusted padding to maximize content area */
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 1rem;
+            outline: none;
+            text-align: center;
+        }
+
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-top: 2rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+            outline: none;
+        }
+
+        .header-section {
+            margin-bottom: 2rem;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .meta-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--secondary);
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .meta-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--primary);
+            border: 1px dashed transparent;
+            padding: 0.35rem;
+            transition: all 0.2s;
+            border-radius: 0.25rem;
+            line-height: 1.4;
+            outline: none;
+        }
+
+        .meta-value:hover,
+        .meta-value:focus {
+            border-color: var(--accent);
+            background: white;
+        }
+
+        .special-modules ul {
+            list-style-type: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .special-modules li {
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .special-modules li::before {
+            content: "•";
+            color: var(--accent);
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+            position: absolute;
+            left: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+            margin-top: 1rem;
+        }
+
+        th {
+            background-color: var(--primary);
+            color: white;
+            text-align: left;
+            padding: 1rem;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        th:nth-child(1) {
+            width: 10%;
+            text-align: center;
+        }
+
+        th:nth-child(2) {
+            width: 30%;
+        }
+
+        th:nth-child(3) {
+            width: 45%;
+        }
+
+        th:nth-child(4) {
+            width: 15%;
+            text-align: right;
+        }
+
+        td {
+            padding: 0;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        td:nth-child(1) {
+            text-align: center;
+            vertical-align: middle;
+            font-weight: 600;
+            color: var(--secondary);
+        }
+
+        td:nth-child(4) {
+            text-align: right;
+            vertical-align: middle;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        tr:nth-child(even) td {
+            background-color: #f8fafc;
+        }
+
+        .editable-cell {
+            border: 1px dashed transparent;
+            padding: 1rem;
+            min-height: 1.5rem;
+            transition: all 0.2s;
+            outline: none;
+            display: block;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .editable-cell:hover,
+        .editable-cell:focus {
+            border-color: var(--accent);
+            background: white;
+            box-shadow: inset 0 0 0 1px var(--accent);
+        }
+
+        .total-section {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 1.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .total-label {
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+
+        .total-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fbbf24;
+            outline: none;
+            border: 1px dashed transparent;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+        }
+
+        .total-amount:hover,
+        .total-amount:focus {
+            border-color: #fbbf24;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .features-section {
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .feature-block {
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            outline: none;
+            border: 1px dashed transparent;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+        }
+
+        .feature-title:hover,
+        .feature-title:focus {
+            border-color: var(--accent);
+            background: white;
+        }
+
+        .note {
+            font-style: italic;
+            color: var(--secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            outline: none;
+            border: 1px dashed transparent;
+            padding: 0.25rem;
+        }
+
+        .note:hover,
+        .note:focus {
+            border-color: var(--accent);
+        }
+
+        .terms-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .term-box {
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+        }
+
+        .term-box h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--primary);
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+            outline: none;
+        }
+
+        ul {
+            padding-left: 1.5rem;
+            margin-top: 0;
+            margin-bottom: 0;
+        }
+
+        li {
+            color: var(--secondary);
+            font-size: 0.875rem;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .editable-list-item {
+            border: 1px dashed transparent;
+            padding: 0.25rem;
+            transition: all 0.2s;
+            outline: none;
+            display: inline-block;
+            width: calc(100% - 1rem);
+            border-radius: 0.25rem;
+            box-sizing: border-box;
+        }
+
+        .editable-list-item:hover,
+        .editable-list-item:focus {
+            border-color: var(--accent);
+            background: white;
+        }
+
+        .closing {
+            margin-top: 3rem;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            padding-top: 2rem;
+            page-break-inside: avoid;
+        }
+
+        .closing p {
+            color: var(--secondary);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+            outline: none;
+            border: 1px dashed transparent;
+            padding: 0.25rem;
+        }
+
+        .closing p:hover,
+        .closing p:focus {
+            border-color: var(--accent);
+        }
+
+        .closing strong {
+            color: var(--primary);
+            font-size: 1.125rem;
+            outline: none;
+            border: 1px dashed transparent;
+            padding: 0.25rem;
+        }
+
+        .closing strong:hover,
+        .closing strong:focus {
+            border-color: var(--accent);
+        }
+
+        .signature {
+            margin-top: 3rem;
+            text-align: right;
+        }
+
+        .signature-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .signature-title {
+            color: var(--secondary);
+            font-size: 0.875rem;
+        }
+
+        .editable-inline {
+            border: 1px dashed transparent;
+            padding: 0.25rem;
+            transition: all 0.2s;
+            outline: none;
+            display: inline-block;
+            border-radius: 0.25rem;
+        }
+
+        .editable-inline:hover,
+        .editable-inline:focus {
+            border-color: var(--accent);
+            background: #f1f5f9;
+        }
+
+        .print-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgb(37 99 235 / 0.5);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 50;
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(37 99 235 / 0.5);
+        }
+
+        @media print {
+            @page {
+                size: letter;
+                margin: 0;
+                /* Removes browser headers (timestamp, title) and footers (URL, page numbers) */
+            }
+
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+
+            .document {
+                box-shadow: none;
+                width: 100%;
+                height: auto;
+                padding: 12mm 20mm;
+                /* Using padding instead of @page margins */
+            }
+
+            .print-btn {
+                display: none;
+            }
+
+            /* Adjust margins and padding slightly to ensure everything fits on letter size */
+            .header-section {
+                margin-bottom: 1rem;
+            }
+
+            .meta-grid {
+                margin-bottom: 1.25rem;
+                padding: 1rem;
+            }
+
+            h2 {
+                margin-top: 1.25rem;
+            }
+
+            table {
+                margin-bottom: 1rem;
+                margin-top: 0.5rem;
+            }
+
+            .editable-cell {
+                padding: 0.75rem 0.5rem !important;
+            }
+
+            th {
+                padding: 0.75rem 0.5rem !important;
+            }
+
+            .total-section {
+                margin-bottom: 1.5rem;
+                page-break-inside: avoid;
+            }
+
+            .editable-cell,
+            .meta-value,
+            .editable-list-item,
+            .total-amount,
+            h1,
+            h2,
+            h3,
+            .editable-inline,
+            .note,
+            .closing p,
+            .closing strong,
+            .feature-title {
+                border-color: transparent !important;
+                box-shadow: none !important;
+                background: transparent !important;
+            }
+
+            .term-box,
+            .meta-grid {
+                background: white;
+                border: 1px solid var(--border);
+            }
+
+            .features-section,
+            .terms-grid {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="print-btn" onclick="window.print()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9"></polyline>
+            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+            <rect x="6" y="14" width="12" height="8"></rect>
+        </svg>
+        Save as PDF
+    </button>
+
+    <div class="document">
+        <div class="header-section">
+            <h1 contenteditable="true">Commercial Quotation – Software Development</h1>
+        </div>
+
+        <div class="meta-grid">
+            <div class="meta-item">
+                <span class="meta-label">Software / Platform Name</span>
+                <div class="meta-value" contenteditable="true">BizTrack</div>
+            </div>
+            <div class="meta-item">
+                <span class="meta-label">Type</span>
+                <div class="meta-value" contenteditable="true">Business Management ERP / SaaS Admin Dashboard</div>
+            </div>
+            <div class="meta-item" style="grid-column: span 2;">
+                <span class="meta-label">Special Modules</span>
+                <div class="special-modules">
+                    <ul>
+                        <li><span class="editable-list-item" contenteditable="true">Real-time Analytics Dashboard</span>
+                        </li>
+                        <li><span class="editable-list-item" contenteditable="true">Advanced Charting & Reports</span>
+                        </li>
+                        <li><span class="editable-list-item" contenteditable="true">Inventory Tracking</span></li>
+                        <li><span class="editable-list-item" contenteditable="true">Customer Management</span></li>
+                        <li><span class="editable-list-item" contenteditable="true">Order Management System</span></li>
+                        <li><span class="editable-list-item" contenteditable="true">Admin Control Panel</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <h2 contenteditable="true">Development Quotation for Software</h2>
+        <p class="note" contenteditable="true">IMP: This will be a Software Platform, not just a website.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>SR No</th>
+                    <th>Module</th>
+                    <th>Description</th>
+                    <th>Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Architecture & Software Design</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">System architecture planning, RESTful API
+                            design, data structuring (JSON/Excel handling with async-mutex), and component hierarchy
+                            planning.</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">₹2,000</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Frontend Development</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Building a lightning-fast, responsive Single
+                            Page Application (SPA) using React.js, TypeScript, and modern styling architectures
+                            (Tailwind).</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">₹4,000</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Backend Development</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Robust Node.js and Express.js server setup
+                            securely handling data routes, file system read/writes, and integrating socket.io for future
+                            real-time scaling.</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">₹4,000</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">UI/UX Design</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Designing a clean, enterprise-grade aesthetic
+                            with customized data visualizations, interactive cards, and an intuitive sidebar navigation
+                            system.</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">₹2,000</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Order Management System</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Creation, reading, updating, and deletion
+                            (CRUD) of business orders. Includes status workflows (Processing, Completed, etc.) and
+                            date-range filtering.</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">₹2,000</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Customer & Inventory Module</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Extensive tracking of customer profiles,
+                            purchase history, total spend calculation, alongside a complete Raw Material stock inventory
+                            system.</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">₹2,000</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Admin Dashboard</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Dynamic financial command center. Features
+                            real-time metric cards (Total Revenue, Total Orders) and interactive line, bar, and pie
+                            charts (recharts).</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">₹1,500</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">DevOps & Deployment</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Server configuration, environment setup,
+                            application bundling, and production build deployment preparation.</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">₹1,000</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Launch & Handholding</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">Final system QA testing, live environment
+                            rollout, application handover, and initial operator guidance.</div>
+                    </td>
+                    <td>
+                        <div class="editable-cell" contenteditable="true">₹1,500</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="total-section">
+            <span class="total-label">Total Estimated Project Cost</span>
+            <span class="total-amount" contenteditable="true">₹20,000 /-</span>
+        </div>
+
+        <div class="features-section">
+            <h2 contenteditable="true">Core Functionalities / Features</h2>
+
+            <div class="feature-block">
+                <div class="feature-title" contenteditable="true">1. Analytics & Reporting (Dashboard)</div>
+                <ul>
+                    <li><span class="editable-list-item" contenteditable="true"><strong>KPI Cards:</strong> Instant
+                            metrics for Total Revenue, Total Orders, Average Order Value, and Expense totals.</span>
+                    </li>
+                    <li><span class="editable-list-item" contenteditable="true"><strong>Dynamic Visualizations:</strong>
+                            Interactive Line Charts (Revenue/Orders trends), Bar Charts, and Pie Charts
+                            (Distribution).</span></li>
+                    <li><span class="editable-list-item" contenteditable="true"><strong>Smart Filtering:</strong>
+                            Time-range data manipulation (Last 7 Days, Last 30 Days) that simultaneously updates all
+                            components.</span></li>
+                </ul>
+            </div>
+
+            <div class="feature-block">
+                <div class="feature-title" contenteditable="true">2. Order Management</div>
+                <ul>
+                    <li><span class="editable-list-item" contenteditable="true">Create new orders with assigned customer
+                            data, order values, and expected delivery dates.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">Modify order statuses manually from the
+                            interface.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">Delete or amend historical order
+                            entries.</span></li>
+                </ul>
+            </div>
+
+            <div class="feature-block">
+                <div class="feature-title" contenteditable="true">3. Customer Directory</div>
+                <ul>
+                    <li><span class="editable-list-item" contenteditable="true">Maintain a digital address book of
+                            clients.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">Automatically aggregated data: view
+                            total money spent by each customer and their last activity date.</span></li>
+                </ul>
+            </div>
+
+            <div class="feature-block">
+                <div class="feature-title" contenteditable="true">4. Raw Materials / Inventory Tracking</div>
+                <ul>
+                    <li><span class="editable-list-item" contenteditable="true">Log materials, quantities, unit metrics,
+                            and costs.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">Monitor stock levels to ensure
+                            operational efficiency.</span></li>
+                </ul>
+            </div>
+
+            <div class="feature-block">
+                <div class="feature-title" contenteditable="true">5. System Settings</div>
+                <ul>
+                    <li><span class="editable-list-item" contenteditable="true">Manage application-wide
+                            preferences.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">Configurable UI/UX settings.</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="terms-grid">
+            <div class="term-box">
+                <h3 contenteditable="true">Payment Terms</h3>
+                <ul>
+                    <li><span class="editable-list-item" contenteditable="true">30% advance payment required to initiate
+                            project.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">Remaining payment released in
+                            milestone-based phases.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">Final payment upon successful
+                            deployment.</span></li>
+                </ul>
+            </div>
+
+            <div class="term-box">
+                <h3 contenteditable="true">Assumptions & Exclusions</h3>
+                <ul>
+                    <li><span class="editable-list-item" contenteditable="true">Only bugs related to implemented
+                            features are covered.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">New feature requests will be charged
+                            separately.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">Not included: SEO & Marketing, AMC /
+                            Long-term maintenance, Third-party paid APIs or licenses.</span></li>
+                </ul>
+            </div>
+
+            <div class="term-box">
+                <h3 contenteditable="true">Project Timeline</h3>
+                <ul>
+                    <li><span class="editable-list-item" contenteditable="true">Estimated Development Time: <strong>3–4
+                                Weeks</strong></span></li>
+                </ul>
+            </div>
+
+            <div class="term-box">
+                <h3 contenteditable="true">Support</h3>
+                <ul>
+                    <li><span class="editable-list-item" contenteditable="true">15 Days post-launch support
+                            included.</span></li>
+                    <li><span class="editable-list-item" contenteditable="true">Minor fixes covered during support
+                            period.</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="closing">
+            <p contenteditable="true">We look forward to building a scalable, secure, and efficient business management
+                platform that supports your operational growth and future expansion.</p>
+            <strong contenteditable="true">Let’s build this success together.</strong>
+
+            <div class="signatures-wrapper"
+                style="display: flex; justify-content: space-between; margin-top: 3rem; text-align: left;">
+                <div class="signature" style="margin-top: 0; text-align: left;">
+                    <div class="meta-label">Prepared By:</div>
+                    <div class="signature-name editable-inline" contenteditable="true" style="display: block;">Mujtaba
+                        Ali</div>
+                    <div class="signature-title editable-inline" contenteditable="true" style="display: block;">Software
+                        Developer</div>
+                </div>
+
+                <div class="signature" style="margin-top: 0; text-align: right;">
+                    <div class="meta-label">Prepared By:</div>
+                    <div class="signature-name editable-inline" contenteditable="true" style="display: block;">Muhammed
+                        Ali</div>
+                    <div class="signature-title editable-inline" contenteditable="true" style="display: block;">Software
+                        Developer / Data Engineer</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BizTrack Gold</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#D4AF37",
+            "primary-hover": "#b5952f",
+            "background-base": "#121212",
+            "background-surface": "#1e1e1e",
+            "border-color": "#333333",
+            "gold": {
+              DEFAULT: "#D4AF37",
+              500: "#D4AF37",
+              600: "#B08D26",
+            },
+            "dark": {
+              900: "#0a0a0a",
+              800: "#121212",
+              700: "#1e1e1e",
+              600: "#2d2d2d",
+            }
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          animation: {
+            "glow-pulse": "glowPulse 3s infinite alternate",
+            "slide-up-fade": "slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            "page-slide-in": "pageSlideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+            "warning-pulse": "warningPulse 2s infinite",
+            "critical-pulse": "criticalPulse 1.5s infinite",
+            "border-shimmer": "borderShimmer 3s linear infinite",
+            "ambient-mesh": "meshBg 20s ease infinite alternate",
+          },
+          keyframes: {
+            glowPulse: {
+              "0%": { boxShadow: "0 0 5px rgba(212, 175, 55, 0.1)" },
+              "100%": { boxShadow: "0 0 20px rgba(212, 175, 55, 0.4)" }
+            },
+            slideUpFade: {
+              "0%": { opacity: "0", transform: "translateY(20px)" },
+              "100%": { opacity: "1", transform: "translateY(0)" }
+            },
+            pageSlideIn: {
+              "0%": { opacity: "0", transform: "translateX(30px) scale(0.98)", filter: "blur(4px)" },
+              "100%": { opacity: "1", transform: "translateX(0) scale(1)", filter: "blur(0px)" }
+            },
+            warningPulse: {
+              "0%, 100%": { boxShadow: "0 0 0px rgba(234, 179, 8, 0)" },
+              "50%": { boxShadow: "0 0 15px rgba(234, 179, 8, 0.5)" }
+            },
+            criticalPulse: {
+              "0%, 100%": { boxShadow: "0 0 0px rgba(239, 68, 68, 0)" },
+              "50%": { boxShadow: "0 0 20px rgba(239, 68, 68, 0.6)" }
+            },
+            borderShimmer: {
+              "0%": { backgroundPosition: "0% 50%" },
+              "100%": { backgroundPosition: "100% 50%" }
+            },
+            meshBg: {
+              "0%": { backgroundPosition: "0% 0%" },
+              "100%": { backgroundPosition: "100% 100%" }
+            }
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #e5e7eb;
+      background-image: radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.03), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(212, 175, 55, 0.02), transparent 25%);
+      background-size: 200% 200%;
+      animation: meshBg 25s ease infinite alternate;
+      overflow-x: hidden;
+    }
+
+    /* Cinematic base styles */
+    .glass-panel {
+      background: rgba(30, 30, 30, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .premium-hover {
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .premium-hover:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px -10px rgba(212, 175, 55, 0.15);
+      border-color: rgba(212, 175, 55, 0.4);
+    }
+
+    .btn-pressable {
+      transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .btn-pressable:active {
+      transform: scale(0.96);
+      filter: brightness(0.9);
+    }
+
+    /* Custom Scrollbar for dark theme */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #1e1e1e;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #333;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #444;
+    }
+
+    .chart-grid {
+      background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+  }
+}
+</script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
+</html>

@@ -1,6 +1,7 @@
 export interface Order {
   id: string;
-  customer: string;
+  customerId: string;
+  customer: string; // Name for display
   productName: string;
   quantity: number;
   pricePerUnit: number;
