@@ -60,25 +60,34 @@ const Orders: React.FC = () => {
 
   useEffect(() => {
     const unsubOrders = subscribeToCollection('orders', (data) => {
-      const mappedOrders = data.map((o: any) => ({
-        id: o.id,
-        customerId: o.customerId,
-        customer: o.customerName || 'Unknown',
-        productName: o.productName || '',
-        quantity: o.quantity || 0,
-        pricePerUnit: o.unitPrice || 0,
-        amount: o.totalAmount || 0,
-        paid: o.amountPaid || 0,
-        pending: (o.totalAmount || 0) - (o.amountPaid || 0),
-        status: o.paymentStatus || 'Unpaid',
-        productionStatus: o.productionStatus || 'Designing',
-        rawMaterialType: o.rawMaterialType || '',
-        rawMaterialColor: o.rawMaterialColor || '',
-        failedProducts: o.failedProducts || 0,
-        date: o.createdAt ? new Date(o.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
-        _rawDate: o.createdAt ? o.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
-        deliveryDate: o.deliveryDate || ''
-      }));
+      const mappedOrders = data.map((o: any) => {
+        const totalAmount = o.totalAmount || 0;
+        const amountPaid = o.amountPaid || 0;
+        const pending = totalAmount - amountPaid;
+
+        // Auto-correct status based on paid amount for legacy entries
+        let derivedStatus = amountPaid >= totalAmount ? 'Paid' : 'Unpaid';
+
+        return {
+          id: o.id,
+          customerId: o.customerId,
+          customer: o.customerName || 'Unknown',
+          productName: o.productName || '',
+          quantity: o.quantity || 0,
+          pricePerUnit: o.unitPrice || 0,
+          amount: totalAmount,
+          paid: amountPaid,
+          pending: pending,
+          status: derivedStatus,
+          productionStatus: o.productionStatus || 'Designing',
+          rawMaterialType: o.rawMaterialType || '',
+          rawMaterialColor: o.rawMaterialColor || '',
+          failedProducts: o.failedProducts || 0,
+          date: o.createdAt ? new Date(o.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
+          _rawDate: o.createdAt ? o.createdAt.split('T')[0] : new Date().toISOString().split('T')[0],
+          deliveryDate: o.deliveryDate || ''
+        };
+      });
       setOrders(mappedOrders);
       setLoading(false);
     });
@@ -165,10 +174,23 @@ const Orders: React.FC = () => {
       const selectedCustomer = customers.find(c => c.id === formData.customerId);
       const customerName = selectedCustomer ? selectedCustomer.name : formData.customerName;
 
+      const quantity = parseFloat(formData.quantity) || 0;
+      const unitPrice = parseFloat(formData.unitPrice) || 0;
+      const amountPaid = parseFloat(formData.amountPaid) || 0;
+      const failedProducts = parseInt(formData.failedProducts) || 0;
+      const totalAmount = quantity * unitPrice;
+
+      let paymentStatus = amountPaid >= totalAmount ? 'Paid' : 'Unpaid';
+
       const payload = {
         ...formData,
         customerName, // Ensure we upload the current name
-        totalAmount: (parseFloat(formData.quantity) || 0) * (parseFloat(formData.unitPrice) || 0),
+        quantity,
+        unitPrice,
+        amountPaid,
+        failedProducts,
+        totalAmount,
+        paymentStatus,
         createdAt: new Date(formData.orderDate).toISOString()
       };
 
@@ -411,7 +433,7 @@ const Orders: React.FC = () => {
               {showFilterDropdown && (
                 <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#181818] ring-1 ring-black ring-opacity-5 z-20 border border-border-color">
                   <div className="py-1" role="menu">
-                    {['All', 'Paid', 'Partial', 'Unpaid'].map((status) => (
+                    {['All', 'Paid', 'Unpaid'].map((status) => (
                       <button
                         key={status}
                         onClick={() => {
@@ -495,8 +517,7 @@ const Orders: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-md border 
                                     ${order.status === 'Paid' ? 'bg-green-900/20 text-green-400 border-green-800' :
-                        order.status === 'Partial' ? 'bg-yellow-900/20 text-yellow-500 border-yellow-800' :
-                          'bg-gray-800 text-foreground-muted border-border-color'}`}>
+                        'bg-gray-800 text-foreground-muted border-border-color'}`}>
                       {order.status}
                     </span>
                   </td>
