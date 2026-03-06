@@ -712,11 +712,19 @@ const RawMaterials: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">{item.paidBy}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button onClick={() => handleDeleteMaterial(item.id)} className="text-muted hover:text-red-500 transition-colors p-1 mr-2" title="Delete Record">
-                            <span className="material-icons text-sm">delete</span>
+                          <button
+                            onClick={() => handleEditClick(item)}
+                            className="text-primary hover:text-foreground transition-colors mr-3"
+                            title="Edit Record"
+                          >
+                            <span className="material-icons text-[18px]">edit</span>
                           </button>
-                          <button onClick={() => handleEditClick(item)} className="text-muted hover:text-primary transition-colors p-1" title="Edit Record">
-                            <span className="material-icons text-sm">edit</span>
+                          <button
+                            onClick={() => handleDeleteMaterial(item.id)}
+                            className="text-red-500 hover:text-red-400 transition-colors"
+                            title="Delete Record"
+                          >
+                            <span className="material-icons text-[18px]">delete_outline</span>
                           </button>
                         </td>
                       </tr>
