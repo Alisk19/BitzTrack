@@ -56,3 +56,19 @@ export interface Expense {
   date: string;
   notes: string;
 }
+
+export interface Bill {
+  id: string;
+  orderId: string;
+  customerId: string;
+  customerName: string;
+  date: string;
+  amount: number;
+  status: 'Pending' | 'Paid';
+  items: Array<{
+    productName: string;
+    quantity: number;
+    price: number;
+    amount: number;
+  }>;
+}

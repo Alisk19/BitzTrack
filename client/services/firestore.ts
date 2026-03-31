@@ -14,18 +14,28 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 
+const collectionCaches: Record<string, any[]> = {};
+
 // Generic function to subscribe to a collection
 export const subscribeToCollection = (
     collectionName: string,
     callback: (data: any[]) => void,
     constraints: QueryConstraint[] = []
 ) => {
+    // Optimistic UI update: instantly yield the cached state if it exists
+    if (collectionCaches[collectionName]) {
+        callback(collectionCaches[collectionName]);
+    }
+
     const q = query(collection(db, collectionName), ...constraints);
     return onSnapshot(q, (snapshot) => {
         const data = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
         }));
+        
+        // Update the central memory cache seamlessly
+        collectionCaches[collectionName] = data;
         callback(data);
     });
 };

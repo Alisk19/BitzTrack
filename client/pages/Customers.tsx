@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '../services/firestore';
+import ScrollableTable from '../components/ScrollableTable';
 
 interface Customer {
   id: string;
@@ -277,8 +278,8 @@ const Customers: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-800">
+            <ScrollableTable>
+              <table className="min-w-full divide-y divide-gray-800 whitespace-nowrap">
                 <thead className="bg-background-base">
                   <tr>
                     <th onClick={() => requestSort('name')} className="group px-6 py-3 text-left text-xs font-medium text-muted uppercase tracking-wider cursor-pointer hover:bg-gray-800 select-none">
@@ -331,7 +332,7 @@ const Customers: React.FC = () => {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </ScrollableTable>
           </div>
         </div>
       </div>

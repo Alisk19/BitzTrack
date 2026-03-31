@@ -161,6 +161,73 @@
     .animate-fade-in-up {
       animation: fadeInUp 0.6s ease-out forwards;
     }
+
+    /* ─── SCROLLABLE TABLE — PREMIUM SYSTEM ─────────────────────────── */
+
+    /* Wrapper: establishes the stacking context */
+    .st-wrapper {
+      position: relative;
+    }
+
+    /* Table body: scrolls horizontally but HIDES the native scrollbar */
+    .st-body {
+      overflow-x: auto;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+      /* Chrome/Safari — hide scrollbar */
+      scrollbar-width: none;      /* Firefox */
+      -ms-overflow-style: none;   /* IE / Edge legacy */
+    }
+    .st-body::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Bottom proxy bar: mirrors table scroll, fades in on hover.
+       Height is controlled via JS inline style (0 → 8px) so no permanent space
+       is reserved when the table fits its container without overflow. */
+    .st-bottom-bar {
+      overflow-x: auto;
+      overflow-y: hidden;
+      border-radius: 99px;
+      background: transparent;
+    }
+
+    /* The invisible spacer inside the proxy that gives it the right scrollable width */
+    .st-bottom-inner {
+      height: 1px;
+      /* width is set via JS to match table scrollWidth */
+    }
+
+    /* Premium gold scrollbar thumb on the proxy bar */
+    .st-bottom-bar::-webkit-scrollbar {
+      height: 6px;
+    }
+    .st-bottom-bar::-webkit-scrollbar-track {
+      background: rgba(51, 51, 51, 0.6);
+      border-radius: 99px;
+    }
+    .st-bottom-bar::-webkit-scrollbar-thumb {
+      background: linear-gradient(
+        90deg,
+        rgba(212, 175, 55, 0.35) 0%,
+        rgba(212, 175, 55, 0.8)  50%,
+        rgba(212, 175, 55, 0.35) 100%
+      );
+      border-radius: 99px;
+    }
+    .st-bottom-bar::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(
+        90deg,
+        rgba(212, 175, 55, 0.6) 0%,
+        rgba(212, 175, 55, 1)   50%,
+        rgba(212, 175, 55, 0.6) 100%
+      );
+    }
+    /* Firefox proxy bar */
+    .st-bottom-bar {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(212, 175, 55, 0.6) rgba(51, 51, 51, 0.5);
+    }
   </style>
   <script type="importmap">
 {

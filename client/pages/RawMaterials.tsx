@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '../services/firestore';
 import { exportToCSV } from '../utils/exportUtils';
+import ScrollableTable from '../components/ScrollableTable';
 
 interface Material {
   id: string;
@@ -647,8 +648,8 @@ const RawMaterials: React.FC = () => {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-800">
+              <ScrollableTable>
+                <table className="min-w-full divide-y divide-gray-800 whitespace-nowrap">
                   <thead>
                     <tr className="bg-background-base">
                       <th onClick={() => requestSort('name')} className="group px-6 py-3 text-left text-xs font-bold text-primary uppercase tracking-wider cursor-pointer hover:bg-gray-800 select-none">
@@ -731,12 +732,13 @@ const RawMaterials: React.FC = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </ScrollableTable>
 
             </div>
           </div>
         </div>
       )}
+
 
       {activeTab === 'control' && (
         <div className="flex flex-col gap-8 animate-fade-in-up" style={{ animationFillMode: 'both', animationDelay: '500ms' }}>

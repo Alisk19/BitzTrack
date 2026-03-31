@@ -8,6 +8,7 @@ import RawMaterials from './pages/RawMaterials';
 import PersonalExpenses from './pages/PersonalExpenses';
 import Settings from './pages/Settings';
 import LoginPage from './pages/LoginPage';
+import Bills from './pages/Bills';
 import PageTransition from './components/PageTransition';
 import LandingPage from './pages/LandingPage';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -49,6 +50,7 @@ const AppContent: React.FC = () => {
           {/* Protected Routes */}
           <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><PageTransition><Orders /></PageTransition></ProtectedRoute>} />
+          <Route path="/bills" element={<ProtectedRoute><PageTransition><Bills /></PageTransition></ProtectedRoute>} />
           <Route path="/customers" element={<ProtectedRoute><PageTransition><Customers /></PageTransition></ProtectedRoute>} />
           <Route path="/raw-materials" element={<ProtectedRoute><PageTransition><RawMaterials /></PageTransition></ProtectedRoute>} />
           <Route path="/personal-expenses" element={<ProtectedRoute><PageTransition><PersonalExpenses /></PageTransition></ProtectedRoute>} />

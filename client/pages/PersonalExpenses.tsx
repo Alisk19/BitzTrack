@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '../services/firestore';
 import { Link } from 'react-router-dom';
+import ScrollableTable from '../components/ScrollableTable';
 
 interface Expense {
   id: string;
@@ -546,8 +547,8 @@ const PersonalExpenses: React.FC = () => {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-800">
+              <ScrollableTable>
+                <table className="min-w-full divide-y divide-gray-800 whitespace-nowrap">
                   <thead>
                     <tr className="bg-background-base">
                       <th onClick={() => requestSort('date')} className="group px-6 py-3 text-left text-xs font-bold text-primary uppercase tracking-wider cursor-pointer hover:bg-gray-800 select-none">
@@ -618,7 +619,7 @@ const PersonalExpenses: React.FC = () => {
                     )}
                   </tbody>
                 </table>
-              </div>
+              </ScrollableTable>
 
               <div className="bg-background-base px-4 py-3 flex items-center justify-between border-t border-border-color sm:px-6 mt-auto">
                 <p className="text-sm text-muted">

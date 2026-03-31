@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { subscribeToCollection, addDocument, updateDocument, deleteDocument } from '../services/firestore';
 import { exportToCSV } from '../utils/exportUtils';
+import { autoGenerateBill } from '../services/billingService';
+import ScrollableTable from '../components/ScrollableTable';
 
 interface Order {
   id: string;
@@ -197,9 +199,24 @@ const Orders: React.FC = () => {
 
       if (editMode && editingId) {
         await updateDocument('orders', editingId, payload);
+        
+        // Auto-generate bill if changing status to Completed
+        // We could theoretically check if it was previously not 'Completed' but making it idempotent or firing on each save 
+        // to Completed is fine given it's purely frontend based without previous states easily cached here unless we add logic.
+        if (payload.productionStatus === 'Completed') {
+          payload.id = editingId; // attach id for billing relation
+          await autoGenerateBill(payload);
+        }
+
         alert("Order updated successfully!");
       } else {
-        await addDocument('orders', payload);
+        const newOrderId = await addDocument('orders', payload);
+        
+        if (payload.productionStatus === 'Completed') {
+          payload.id = newOrderId;
+          await autoGenerateBill(payload);
+        }
+
         alert("Order created successfully!");
       }
 
@@ -453,8 +470,8 @@ const Orders: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-800">
+        <ScrollableTable>
+          <table className="min-w-full divide-y divide-gray-800 whitespace-nowrap">
             <thead className="bg-background-base">
               <tr>
                 <th onClick={() => requestSort('date')} className="group px-6 py-3 text-left text-xs font-bold text-foreground-muted uppercase tracking-wider cursor-pointer hover:bg-gray-800 select-none">
@@ -541,7 +558,7 @@ const Orders: React.FC = () => {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollableTable>
       </div>
 
     </div>

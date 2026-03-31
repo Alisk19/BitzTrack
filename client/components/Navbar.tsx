@@ -30,6 +30,7 @@ const Navbar: React.FC = () => {
               <NavLink to="/customers" className={navLinkClass}>Customers</NavLink>
               <NavLink to="/orders" className={navLinkClass}>Orders</NavLink>
               <NavLink to="/raw-materials" className={navLinkClass}>Raw Materials</NavLink>
+              <NavLink to="/bills" className={navLinkClass}>Bills</NavLink>
               <NavLink to="/personal-expenses" className={navLinkClass}>Personal Expenses</NavLink>
             </div>
           </div>
