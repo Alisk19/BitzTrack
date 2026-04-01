@@ -66,9 +66,11 @@ export interface Bill {
   amount: number;
   status: 'Pending' | 'Paid';
   items: Array<{
-    productName: string;
+    srNo: number;
+    description: string;
+    material: string;
     quantity: number;
-    price: number;
-    amount: number;
+    rate: number;
+    total: number;
   }>;
 }

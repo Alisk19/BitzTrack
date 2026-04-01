@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { subscribeToBills, updateBill, deleteBill, downloadPdfInvoice } from '../services/billingService';
+import { subscribeToBills, updateBill, deleteBill } from '../services/billingService';
 import { Bill } from '../types';
 import ScrollableTable from '../components/ScrollableTable';
+import InvoicePreviewModal from '../components/InvoicePreviewModal';
 
 const Bills: React.FC = () => {
   const [bills, setBills] = useState<Bill[]>([]);
@@ -16,7 +17,7 @@ const Bills: React.FC = () => {
     status: 'Pending'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const [previewingBill, setPreviewingBill] = useState<Bill | null>(null);
 
   useEffect(() => {
     const unsubBills = subscribeToBills((data) => {
@@ -77,15 +78,8 @@ const Bills: React.FC = () => {
     }
   };
 
-  const handleDownloadInvoice = async (bill: Bill) => {
-    setIsDownloading(bill.id);
-    try {
-      await downloadPdfInvoice(bill);
-    } catch (e) {
-        console.error("PDF generation failed", e);
-    } finally {
-      setIsDownloading(null);
-    }
+  const handleDownloadInvoice = (bill: Bill) => {
+    setPreviewingBill(bill);
   };
 
   const sortedBills = useMemo(() => {
@@ -143,7 +137,13 @@ const Bills: React.FC = () => {
   if (loading) return <div className="text-foreground p-8">Loading Bills...</div>;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full position-relative">
+      {previewingBill && (
+        <InvoicePreviewModal 
+          bill={previewingBill}
+          onClose={() => setPreviewingBill(null)}
+        />
+      )}
       <div className="flex items-center justify-between mb-8 animate-fade-in-up" style={{ animationFillMode: 'both', animationDelay: '0ms' }}>
         <div>
           <h2 className="text-2xl font-bold leading-7 text-foreground">Billing Module <span className="text-muted font-normal">Invoices</span></h2>
@@ -290,15 +290,10 @@ const Bills: React.FC = () => {
                         
                         <button
                           onClick={() => handleDownloadInvoice(item)}
-                          disabled={isDownloading === item.id}
-                          className="text-primary hover:text-white transition-colors mr-3 disabled:opacity-50"
-                          title="Download Invoice"
+                          className="text-blue-500 hover:text-white transition-colors mr-3"
+                          title="Preview & Edit Invoice"
                         >
-                          {isDownloading === item.id ? (
-                            <span className="material-icons animate-spin text-[18px]">refresh</span>
-                          ) : (
-                            <span className="material-icons text-[18px]">download</span>
-                          )}
+                          <span className="material-icons text-[18px]">visibility</span>
                         </button>
 
                         <button

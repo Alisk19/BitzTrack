@@ -1,9 +1,9 @@
 import { collection, doc, addDoc, updateDoc, deleteDoc, query, onSnapshot, QueryConstraint } from "firebase/firestore";
 import { db } from "./firebase";
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import saveAs from 'file-saver';
+import PizZip from "pizzip";
+import Docxtemplater from "docxtemplater";
+import saveAs from "file-saver";
 import { Bill } from "../types";
-
 // Memory cache for instantaneous tab switching
 let billsCache: Bill[] | null = null;
 
@@ -41,10 +41,12 @@ export const deleteBill = async (id: string) => {
 
 export const autoGenerateBill = async (orderData: any) => {
     const billItems = [{
-        productName: orderData.productName,
-        quantity: orderData.quantity,
-        price: orderData.unitPrice || orderData.pricePerUnit,
-        amount: orderData.totalAmount || orderData.amount
+        srNo: 1,
+        description: orderData.productName || 'Product Name',
+        material: orderData.rawMaterialType ? `${orderData.rawMaterialType} ${orderData.rawMaterialColor || ''}`.trim() : 'N/A',
+        quantity: orderData.quantity || 1,
+        rate: orderData.unitPrice || orderData.pricePerUnit || 0,
+        total: orderData.totalAmount || orderData.amount || 0
     }];
     
     await addDoc(collection(db, 'bills'), {
@@ -86,104 +88,61 @@ export const numberToWords = (num: number): string => {
     return str.trim() + ' Rupees Only';
 };
 
-// PDF Generation using the fixed Indian.Invoice.pdf template
+// HTML to PDF Generation Engine
+import { createRoot } from "react-dom/client";
+import React from "react";
+import InvoiceTemplate from "../components/InvoiceTemplate";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
+
 export const downloadPdfInvoice = async (bill: Bill) => {
     try {
         console.log("Starting PDF generation for:", bill.id);
-        const url = '/bills/Indian.Invoice.pdf?t=' + new Date().getTime(); // cache-buster
-        const res = await fetch(url);
         
-        if (!res.ok) {
-            throw new Error(`Failed to fetch template: ${res.statusText}`);
-        }
-        
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('text/html')) {
-            throw new Error('Template path returned HTML instead of PDF. Path may be incorrect.');
+        // Setup hidden container
+        const container = document.createElement("div");
+        container.style.position = "absolute";
+        container.style.left = "-9999px";
+        container.style.top = "0";
+        document.body.appendChild(container);
+
+        // Render template into container
+        const root = createRoot(container);
+        root.render(React.createElement(InvoiceTemplate, { bill }));
+
+        // Wait for rendering and image loading
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        const element = container.querySelector("#invoice-template") as HTMLElement;
+        if (!element) {
+            throw new Error("Template failed to mount.");
         }
 
-        const existingPdfBytes = await res.arrayBuffer();
-        if (existingPdfBytes.byteLength < 1000) {
-            throw new Error('Fetched template is unusually small, may be corrupted.');
-        }
-
-        console.log("Template loaded successfully, parsing PDF...");
-        const pdfDoc = await PDFDocument.load(existingPdfBytes);
-        console.log("PDF parsed, embedding fonts...");
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-        
-        const pages = pdfDoc.getPages();
-        const firstPage = pages[0];
-        
-        const { width, height } = firstPage.getSize();
-        
-        // Customer Name
-        firstPage.drawText(bill.customerName || 'Customer', {
-            x: 60,
-            y: height - 190,
-            size: 14,
-            font: boldFont,
-            color: rgb(0.1, 0.1, 0.1),
-        });
-
-        // Date
-        firstPage.drawText(`Date: ${bill.date || ''}`, {
-            x: width - 200,
-            y: height - 190,
-            size: 11,
-            font: font,
-            color: rgb(0.3, 0.3, 0.3),
-        });
-        
-        // Invoice ID
         const invId = `INV-${bill.id.substring(0, 6).toUpperCase()}`;
-        firstPage.drawText(`Invoice #${invId}`, {
-            x: width - 200,
-            y: height - 170,
-            size: 12,
-            font: boldFont,
-            color: rgb(0.1, 0.1, 0.1)
-        });
 
-        // Items Logic
-        let currentY = height - 320; 
-        if (bill.items && bill.items.length > 0) {
-            bill.items.forEach((item) => {
-                firstPage.drawText(item.productName || 'Product', { x: 60, y: currentY, size: 10, font: font, color: rgb(0.2, 0.2, 0.2) });
-                firstPage.drawText(`${item.quantity}`, { x: width - 220, y: currentY, size: 10, font: font, color: rgb(0.2, 0.2, 0.2) });
-                firstPage.drawText(`Rs ${Number(item.price).toFixed(2)}`, { x: width - 150, y: currentY, size: 10, font: font, color: rgb(0.2, 0.2, 0.2) });
-                firstPage.drawText(`Rs ${Number(item.amount).toFixed(2)}`, { x: width - 80, y: currentY, size: 10, font: font, color: rgb(0.2, 0.2, 0.2) });
-                currentY -= 25; 
-            });
-        }
+        const opt = {
+            margin:       [0, 0, 0, 0] as [number, number, number, number],
+            filename:     `Invoice-${invId}.pdf`,
+            image:        { type: 'jpeg' as const, quality: 1.0 },
+            html2canvas:  { scale: 2, useCORS: true, logging: false },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' as const }
+        };
 
-        firstPage.drawText(`Rs ${Number(bill.amount).toFixed(2)}`, {
-            x: width - 120,
-            y: 180, 
-            size: 14,
-            font: boldFont,
-            color: rgb(0, 0, 0)
-        });
+        console.log("Creating PDF...");
+        await html2pdf().from(element).set(opt).save();
+        console.log("PDF Triggered successfully.");
 
-        const inWords = numberToWords(Math.round(bill.amount));
-        firstPage.drawText(`Amount in words: ${inWords}`, {
-            x: 60,
-            y: 140, 
-            size: 10,
-            font: boldFont,
-            color: rgb(0.2, 0.2, 0.2)
-        });
+        // Cleanup
+        setTimeout(() => {
+            root.unmount();
+            if (document.body.contains(container)) {
+                document.body.removeChild(container);
+            }
+        }, 1000);
 
-        console.log("Saving PDF bytes...");
-        const pdfBytes = await pdfDoc.save();
-        
-        console.log("Triggering download...");
-        const blob = new Blob([pdfBytes as any], { type: "application/pdf" });
-        saveAs(blob, `Invoice-${invId}.pdf`);
-        console.log("Download triggered successfully.");
     } catch (e: any) {
         console.error("Failed to generate PDF invoice:", e);
-        alert(`Could not generate PDF: ${e.message || 'Unknown error'}. Please ensure the template exists in public/bills.`);
+        alert(`Could not generate PDF: ${e.message || 'Unknown error'}.`);
     }
 };
+

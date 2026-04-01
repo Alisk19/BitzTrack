@@ -1,68 +1,240 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  useId,
+} from 'react';
+import { createPortal } from 'react-dom';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   FloatingScrollbar — a SINGLE fixed-to-viewport scrollbar rendered via
+   a React portal.  It is shared across all ScrollableTable instances on
+   the page.  The active table's geometry is pushed into it via a tiny
+   global event bus so the bar always represents the currently-hovered table.
+   ───────────────────────────────────────────────────────────────────────── */
+
+type FloatingBarEvent = {
+  type: 'activate';
+  tableId: string;
+  left: number;
+  width: number;
+  scrollLeft: number;
+  scrollWidth: number;
+  onBarScroll: (left: number) => void;
+} | {
+  type: 'deactivate';
+  tableId: string;
+} | {
+  type: 'syncScroll';
+  tableId: string;
+  scrollLeft: number;
+};
+
+// Simple global event emitter (no dependencies needed)
+type Listener = (e: FloatingBarEvent) => void;
+const listeners: Set<Listener> = new Set();
+const floatingBus = {
+  emit: (e: FloatingBarEvent) => listeners.forEach(fn => fn(e)),
+  on:   (fn: Listener) => { listeners.add(fn); return () => listeners.delete(fn); },
+};
+
+/* ── The single floating bar component ───────────────────────────────── */
+const FloatingScrollbar: React.FC = () => {
+  const barRef        = useRef<HTMLDivElement>(null);
+  const innerRef      = useRef<HTMLDivElement>(null);
+  const isSyncingRef  = useRef(false);
+  const hideTimerRef  = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const activeIdRef   = useRef<string | null>(null);
+  const onBarScrollCb = useRef<((left: number) => void) | null>(null);
+
+  const [visible, setVisible] = useState(false);
+  const [geometry, setGeometry] = useState({ left: 0, width: 0, scrollWidth: 0 });
+
+  const show = useCallback(() => {
+    clearTimeout(hideTimerRef.current);
+    setVisible(true);
+  }, []);
+
+  const scheduleHide = useCallback(() => {
+    clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => setVisible(false), 600);
+  }, []);
+
+  // Listen to bus events
+  useEffect(() => {
+    const off = floatingBus.on((e) => {
+      if (e.type === 'activate') {
+        activeIdRef.current   = e.tableId;
+        onBarScrollCb.current = e.onBarScroll;
+        setGeometry({ left: e.left, width: e.width, scrollWidth: e.scrollWidth });
+
+        // Sync bar's scrollLeft to match the table
+        if (barRef.current) {
+          isSyncingRef.current = true;
+          barRef.current.scrollLeft = e.scrollLeft;
+          requestAnimationFrame(() => { isSyncingRef.current = false; });
+        }
+        show();
+      } else if (e.type === 'deactivate') {
+        if (activeIdRef.current === e.tableId) {
+          scheduleHide();
+        }
+      } else if (e.type === 'syncScroll') {
+        if (activeIdRef.current === e.tableId && barRef.current) {
+          if (isSyncingRef.current) return;
+          isSyncingRef.current = true;
+          barRef.current.scrollLeft = e.scrollLeft;
+          requestAnimationFrame(() => { isSyncingRef.current = false; });
+        }
+      }
+    });
+    return off;
+  }, [show, scheduleHide]);
+
+  // Update inner width when geometry changes
+  useEffect(() => {
+    if (innerRef.current) {
+      innerRef.current.style.width = `${geometry.scrollWidth}px`;
+    }
+  }, [geometry.scrollWidth]);
+
+  const onBarScroll = useCallback(() => {
+    if (isSyncingRef.current || !barRef.current) return;
+    isSyncingRef.current = true;
+    onBarScrollCb.current?.(barRef.current.scrollLeft);
+    requestAnimationFrame(() => { isSyncingRef.current = false; });
+  }, []);
+
+  const hasOverflow = geometry.scrollWidth > geometry.width + 1;
+
+  if (!hasOverflow) return null;
+
+  return createPortal(
+    <div
+      ref={barRef}
+      onScroll={onBarScroll}
+      onMouseEnter={show}
+      onMouseLeave={scheduleHide}
+      aria-hidden="true"
+      data-floating-scrollbar="true"
+      style={{
+        position: 'fixed',
+        bottom: '6px',
+        left:   `${geometry.left}px`,
+        width:  `${geometry.width}px`,
+        height: '10px',
+        zIndex: 9999,
+        overflowX: 'auto',
+        overflowY: 'hidden',
+        opacity:   visible ? 1 : 0,
+        pointerEvents: visible ? 'auto' : 'none',
+        transition: 'opacity 0.35s cubic-bezier(0.16,1,0.3,1), left 0.15s ease, width 0.15s ease',
+        borderRadius: '99px',
+        /* Firefox */
+        scrollbarWidth: 'thin',
+        scrollbarColor: 'rgba(212,175,55,0.7) rgba(40,40,40,0.6)',
+      } as React.CSSProperties}
+    >
+      <div
+        ref={innerRef}
+        style={{ height: '1px', minWidth: '100%' }}
+      />
+    </div>,
+    document.body
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────────────────
+   ScrollableTable — the per-table wrapper component
+   ───────────────────────────────────────────────────────────────────────── */
 
 interface ScrollableTableProps {
   children: React.ReactNode;
   className?: string;
 }
 
-/**
- * ScrollableTable — Premium bottom-scrollbar table wrapper.
- *
- * • Native scrollbar on the table body is hidden (no ugly default browser bar).
- * • A thin BOTTOM proxy scrollbar fades in when the wrapper is hovered.
- * • The proxy scrollbar bi-directionally mirrors the actual table scroll.
- * • Supports Shift+Wheel horizontal scroll and trackpad gestures.
- * • Uses multiple observers (ResizeObserver, MutationObserver, rAF polling)
- *   so it always picks up overflow even when rows load asynchronously.
- */
+// Global registry of portal-ownership setters.
+// The first registered setter "owns" the portal (renders it).
+const portalOwnerRegistry: Set<React.Dispatch<React.SetStateAction<boolean>>> = new Set();
+
 const ScrollableTable: React.FC<ScrollableTableProps> = ({ children, className = '' }) => {
+  const tableId        = useId();
   const wrapperRef     = useRef<HTMLDivElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
-  const bottomBarRef   = useRef<HTMLDivElement>(null);
-  const proxyInnerRef  = useRef<HTMLDivElement>(null);
   const isSyncingRef   = useRef(false);
   const rafRef         = useRef<number>(0);
+  const isActiveRef    = useRef(false);   // true while mouse is over this table
 
-  const [isHovered,   setIsHovered]   = useState(false);
-  const [hasOverflow, setHasOverflow] = useState(false);
+  const [renderPortal, setRenderPortal] = useState(false);
 
-  /* ─── Core measure function ─────────────────────────────────── */
-  const measure = useCallback(() => {
-    const tableEl = tableScrollRef.current;
-    const inner   = proxyInnerRef.current;
-    if (!tableEl) return;
-    const sw = tableEl.scrollWidth;
-    const cw = tableEl.clientWidth;
-    const overflows = sw > cw + 1;
-    setHasOverflow(overflows);
-    if (inner) inner.style.width = `${sw}px`;
+  // Claim / release portal ownership
+  useEffect(() => {
+    portalOwnerRegistry.add(setRenderPortal);
+    // The first in the set is the owner
+    const reassign = () => {
+      let first = true;
+      portalOwnerRegistry.forEach((setter) => {
+        setter(first);
+        first = false;
+      });
+    };
+    reassign();
+    return () => {
+      portalOwnerRegistry.delete(setRenderPortal);
+      setRenderPortal(false);
+      reassign();
+    };
   }, []);
 
-  /* ─── Poll via rAF until content stabilises (handles async data) */
+
+  /* ── Measure & broadcast geometry ─────────────────────────────────── */
+  const broadcastGeometry = useCallback((scrollLeft?: number) => {
+    const el = tableScrollRef.current;
+    if (!el || !isActiveRef.current) return;   // only broadcast while hovered
+    const rect = el.getBoundingClientRect();
+    floatingBus.emit({
+      type:        'activate',
+      tableId,
+      left:        rect.left,
+      width:       rect.width,
+      scrollLeft:  scrollLeft ?? el.scrollLeft,
+      scrollWidth: el.scrollWidth,
+      onBarScroll: (left) => {
+        if (isSyncingRef.current || !tableScrollRef.current) return;
+        isSyncingRef.current = true;
+        tableScrollRef.current.scrollLeft = left;
+        requestAnimationFrame(() => { isSyncingRef.current = false; });
+      },
+    });
+  }, [tableId]);
+
+  /* ── One-shot measure (no broadcast) for overflow detection on init ── */
+  const measureSilent = useCallback(() => {
+    /* intentionally empty — ResizeObserver fires broadcastGeometry which
+       self-guards on isActiveRef, so no-op when not hovered. */
+  }, []);
+
+  /* ── rAF poll for async content ───────────────────────────────────── */
   const startPolling = useCallback(() => {
     let ticks = 0;
     const poll = () => {
-      measure();
-      if (++ticks < 60) {           // poll for ~1 second at 60fps
-        rafRef.current = requestAnimationFrame(poll);
-      }
+      broadcastGeometry();
+      if (++ticks < 60) rafRef.current = requestAnimationFrame(poll);
     };
     cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(poll);
-  }, [measure]);
+  }, [broadcastGeometry]);
 
-  /* ─── ResizeObserver ─────────────────────────────────────────── */
+  /* ── ResizeObserver ────────────────────────────────────────────────── */
   useEffect(() => {
     startPolling();
-    const ro = new ResizeObserver(measure);
+    const ro = new ResizeObserver(() => broadcastGeometry());
     if (tableScrollRef.current) ro.observe(tableScrollRef.current);
-    return () => {
-      ro.disconnect();
-      cancelAnimationFrame(rafRef.current);
-    };
-  }, [measure, startPolling]);
+    return () => { ro.disconnect(); cancelAnimationFrame(rafRef.current); };
+  }, [broadcastGeometry, startPolling]);
 
-  /* ─── MutationObserver (rows load async from Firestore) ──────── */
+  /* ── MutationObserver (async rows from Firestore) ─────────────────── */
   useEffect(() => {
     const el = tableScrollRef.current;
     if (!el) return;
@@ -71,48 +243,47 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({ children, className =
     return () => mo.disconnect();
   }, [startPolling]);
 
-  /* ─── Window resize ─────────────────────────────────────────── */
+  /* ── Window resize ─────────────────────────────────────────────────── */
   useEffect(() => {
-    const onResize = () => measure();
+    const onResize = () => broadcastGeometry();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [measure]);
+  }, [broadcastGeometry]);
 
-  /* ─── Re-measure when children prop changes ──────────────────── */
-  useEffect(() => {
-    startPolling();
-  }, [children, startPolling]);
+  /* ── Re-measure on children change ────────────────────────────────── */
+  useEffect(() => { startPolling(); }, [children, startPolling]);
 
-  /* ─── Scroll sync: proxy → table ────────────────────────────── */
-  const onProxyScroll = useCallback(() => {
-    if (isSyncingRef.current) return;
-    isSyncingRef.current = true;
-    if (tableScrollRef.current && bottomBarRef.current)
-      tableScrollRef.current.scrollLeft = bottomBarRef.current.scrollLeft;
-    requestAnimationFrame(() => { isSyncingRef.current = false; });
-  }, []);
+  /* ── Hover handlers ─────────────────────────────────────────── */
+  const onMouseEnter = useCallback(() => {
+    isActiveRef.current = true;
+    broadcastGeometry();
+  }, [broadcastGeometry]);
 
-  /* ─── Scroll sync: table → proxy ────────────────────────────── */
+  const onMouseLeave = useCallback(() => {
+    isActiveRef.current = false;
+    floatingBus.emit({ type: 'deactivate', tableId });
+  }, [tableId]);
+
+  /* ── Table native scroll → sync floating bar ──────────────────────── */
   const onTableScroll = useCallback(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
     if (isSyncingRef.current) return;
     isSyncingRef.current = true;
-    if (bottomBarRef.current && tableScrollRef.current)
-      bottomBarRef.current.scrollLeft = tableScrollRef.current.scrollLeft;
+    floatingBus.emit({ type: 'syncScroll', tableId, scrollLeft: el.scrollLeft });
     requestAnimationFrame(() => { isSyncingRef.current = false; });
-  }, []);
+  }, [tableId]);
 
-  /* ─── Shift + Wheel = horizontal scroll ─────────────────────── */
+  /* ── Shift+Wheel / trackpad horizontal ────────────────────────────── */
   const onWheel = useCallback((e: WheelEvent) => {
-    if (!tableScrollRef.current) return;
-    // Horizontal trackpad gesture or Shift+Wheel
+    const el = tableScrollRef.current;
+    if (!el) return;
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey) {
       e.preventDefault();
-      const delta = e.shiftKey ? e.deltaY : e.deltaX;
-      tableScrollRef.current.scrollLeft += delta;
-      if (bottomBarRef.current)
-        bottomBarRef.current.scrollLeft = tableScrollRef.current.scrollLeft;
+      el.scrollLeft += e.shiftKey ? e.deltaY : e.deltaX;
+      floatingBus.emit({ type: 'syncScroll', tableId, scrollLeft: el.scrollLeft });
     }
-  }, []);
+  }, [tableId]);
 
   useEffect(() => {
     const el = wrapperRef.current;
@@ -122,38 +293,26 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({ children, className =
   }, [onWheel]);
 
   return (
-    <div
-      ref={wrapperRef}
-      className={`st-wrapper ${className}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* ── Actual table (scrolls silently — no visible scrollbar) ── */}
-      <div
-        ref={tableScrollRef}
-        className="st-body"
-        onScroll={onTableScroll}
-      >
-        {children}
-      </div>
+    <>
+      {/* First instance renders the one shared portal */}
+      {renderPortal && <FloatingScrollbar />}
 
-      {/* ── Bottom proxy scrollbar — fades in on hover ── */}
       <div
-        ref={bottomBarRef}
-        className="st-bottom-bar"
-        onScroll={onProxyScroll}
-        style={{
-          opacity: (isHovered && hasOverflow) ? 1 : 0,
-          pointerEvents: (isHovered && hasOverflow) ? 'auto' : 'none',
-          height: hasOverflow ? '8px' : '0px',
-          marginTop: hasOverflow ? '2px' : '0px',
-          transition: 'opacity 0.3s cubic-bezier(0.16,1,0.3,1), height 0.15s ease, margin-top 0.15s ease',
-        }}
-        aria-hidden="true"
+        ref={wrapperRef}
+        className={`st-wrapper ${className}`}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       >
-        <div ref={proxyInnerRef} className="st-bottom-inner" />
+        {/* Table scroll container — native scrollbar hidden */}
+        <div
+          ref={tableScrollRef}
+          className="st-body"
+          onScroll={onTableScroll}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

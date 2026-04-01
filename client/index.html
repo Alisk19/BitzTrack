@@ -162,7 +162,7 @@
       animation: fadeInUp 0.6s ease-out forwards;
     }
 
-    /* ─── SCROLLABLE TABLE — PREMIUM SYSTEM ─────────────────────────── */
+    /* ─── SCROLLABLE TABLE — FLOATING VIEWPORT-FIXED SCROLLBAR ─────── */
 
     /* Wrapper: establishes the stacking context */
     .st-wrapper {
@@ -174,59 +174,42 @@
       overflow-x: auto;
       overflow-y: visible;
       -webkit-overflow-scrolling: touch;
-      /* Chrome/Safari — hide scrollbar */
-      scrollbar-width: none;      /* Firefox */
-      -ms-overflow-style: none;   /* IE / Edge legacy */
+      scrollbar-width: none;       /* Firefox */
+      -ms-overflow-style: none;    /* IE / Edge legacy */
     }
     .st-body::-webkit-scrollbar {
-      display: none;
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
     }
 
-    /* Bottom proxy bar: mirrors table scroll, fades in on hover.
-       Height is controlled via JS inline style (0 → 8px) so no permanent space
-       is reserved when the table fits its container without overflow. */
-    .st-bottom-bar {
-      overflow-x: auto;
-      overflow-y: hidden;
-      border-radius: 99px;
-      background: transparent;
-    }
-
-    /* The invisible spacer inside the proxy that gives it the right scrollable width */
-    .st-bottom-inner {
-      height: 1px;
-      /* width is set via JS to match table scrollWidth */
-    }
-
-    /* Premium gold scrollbar thumb on the proxy bar */
-    .st-bottom-bar::-webkit-scrollbar {
+    /* ── Global floating scrollbar portal (fixed to viewport bottom) ── */
+    /* Rendered via React portal into document.body with data-floating-scrollbar */
+    [data-floating-scrollbar]::-webkit-scrollbar {
       height: 6px;
     }
-    .st-bottom-bar::-webkit-scrollbar-track {
-      background: rgba(51, 51, 51, 0.6);
+    [data-floating-scrollbar]::-webkit-scrollbar-track {
+      background: rgba(30, 30, 30, 0.85);
       border-radius: 99px;
     }
-    .st-bottom-bar::-webkit-scrollbar-thumb {
+    [data-floating-scrollbar]::-webkit-scrollbar-thumb {
       background: linear-gradient(
         90deg,
-        rgba(212, 175, 55, 0.35) 0%,
-        rgba(212, 175, 55, 0.8)  50%,
-        rgba(212, 175, 55, 0.35) 100%
+        rgba(212, 175, 55, 0.4)  0%,
+        rgba(212, 175, 55, 0.9) 50%,
+        rgba(212, 175, 55, 0.4) 100%
       );
       border-radius: 99px;
+      box-shadow: 0 0 6px rgba(212, 175, 55, 0.35);
     }
-    .st-bottom-bar::-webkit-scrollbar-thumb:hover {
+    [data-floating-scrollbar]::-webkit-scrollbar-thumb:hover {
       background: linear-gradient(
         90deg,
-        rgba(212, 175, 55, 0.6) 0%,
+        rgba(212, 175, 55, 0.65) 0%,
         rgba(212, 175, 55, 1)   50%,
-        rgba(212, 175, 55, 0.6) 100%
+        rgba(212, 175, 55, 0.65) 100%
       );
-    }
-    /* Firefox proxy bar */
-    .st-bottom-bar {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(212, 175, 55, 0.6) rgba(51, 51, 51, 0.5);
+      box-shadow: 0 0 10px rgba(212, 175, 55, 0.55);
     }
   </style>
   <script type="importmap">
