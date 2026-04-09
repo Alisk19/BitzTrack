@@ -31,11 +31,6 @@ const LandingPage: React.FC = () => {
         e.preventDefault();
         setError('');
 
-        if (email !== 'beendless44@gmail.com') {
-            setError('Unauthorized account access.');
-            return;
-        }
-
         setLoading(true);
         try {
             await signInWithEmailAndPassword(auth, email, password);
